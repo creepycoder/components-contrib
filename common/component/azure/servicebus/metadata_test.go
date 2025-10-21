@@ -542,4 +542,28 @@ func TestParseServiceBusMetadata(t *testing.T) {
 		parseErr3 := addMetadataToMessage(&msg3, metadata3)
 		require.Error(t, parseErr3)
 	})
+
+	t.Run("test enableInOrderMessageDelivery", func(t *testing.T) {
+		fakeProperties := getFakeProperties()
+		fakeProperties["enableInOrderMessageDelivery"] = "true"
+
+		// act.
+		m, err := ParseMetadata(fakeProperties, nil, MetadataModeTopics)
+
+		// assert.
+		require.NoError(t, err)
+		assert.True(t, m.EnableInOrderMessageDelivery)
+	})
+
+	t.Run("test enableInOrderMessageDelivery default", func(t *testing.T) {
+		fakeProperties := getFakeProperties()
+		delete(fakeProperties, "enableInOrderMessageDelivery")
+
+		// act.
+		m, err := ParseMetadata(fakeProperties, nil, MetadataModeTopics)
+
+		// assert.
+		require.NoError(t, err)
+		assert.False(t, m.EnableInOrderMessageDelivery)
+	})
 }

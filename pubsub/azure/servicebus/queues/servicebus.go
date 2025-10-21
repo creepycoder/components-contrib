@@ -88,14 +88,15 @@ func (a *azureServiceBus) Subscribe(ctx context.Context, req pubsub.SubscribeReq
 
 	sub := impl.NewSubscription(
 		impl.SubscriptionOptions{
-			MaxActiveMessages:     a.metadata.MaxActiveMessages,
-			TimeoutInSec:          a.metadata.TimeoutInSec,
-			MaxBulkSubCount:       nil,
-			MaxRetriableEPS:       a.metadata.MaxRetriableErrorsPerSec,
-			MaxConcurrentHandlers: a.metadata.MaxConcurrentHandlers,
-			Entity:                "queue " + req.Topic,
-			LockRenewalInSec:      a.metadata.LockRenewalInSec,
-			RequireSessions:       false,
+			MaxActiveMessages:            a.metadata.MaxActiveMessages,
+			TimeoutInSec:                 a.metadata.TimeoutInSec,
+			MaxBulkSubCount:              nil,
+			MaxRetriableEPS:              a.metadata.MaxRetriableErrorsPerSec,
+			MaxConcurrentHandlers:        a.metadata.MaxConcurrentHandlers,
+			Entity:                       "queue " + req.Topic,
+			LockRenewalInSec:             a.metadata.LockRenewalInSec,
+			RequireSessions:              false,
+			EnableInOrderMessageDelivery: a.metadata.EnableInOrderMessageDelivery,
 		},
 		a.logger,
 	)
@@ -111,14 +112,15 @@ func (a *azureServiceBus) BulkSubscribe(ctx context.Context, req pubsub.Subscrib
 	maxBulkSubCount := commonutils.GetIntValOrDefault(req.BulkSubscribeConfig.MaxMessagesCount, defaultMaxBulkSubCount)
 	sub := impl.NewSubscription(
 		impl.SubscriptionOptions{
-			MaxActiveMessages:     a.metadata.MaxActiveMessages,
-			TimeoutInSec:          a.metadata.TimeoutInSec,
-			MaxBulkSubCount:       &maxBulkSubCount,
-			MaxRetriableEPS:       a.metadata.MaxRetriableErrorsPerSec,
-			MaxConcurrentHandlers: a.metadata.MaxConcurrentHandlers,
-			Entity:                "queue " + req.Topic,
-			LockRenewalInSec:      a.metadata.LockRenewalInSec,
-			RequireSessions:       false,
+			MaxActiveMessages:            a.metadata.MaxActiveMessages,
+			TimeoutInSec:                 a.metadata.TimeoutInSec,
+			MaxBulkSubCount:              &maxBulkSubCount,
+			MaxRetriableEPS:              a.metadata.MaxRetriableErrorsPerSec,
+			MaxConcurrentHandlers:        a.metadata.MaxConcurrentHandlers,
+			Entity:                       "queue " + req.Topic,
+			LockRenewalInSec:             a.metadata.LockRenewalInSec,
+			RequireSessions:              false,
+			EnableInOrderMessageDelivery: a.metadata.EnableInOrderMessageDelivery,
 		},
 		a.logger,
 	)
