@@ -48,6 +48,7 @@ type Metadata struct {
 	PublishMaxRetries               int    `mapstructure:"publishMaxRetries"`
 	PublishInitialRetryIntervalInMs int    `mapstructure:"publishInitialRetryIntervalInMs"`
 	NamespaceName                   string `mapstructure:"namespaceName"` // Only for Azure AD
+	EnableInOrderMessageDelivery    bool   `mapstructure:"enableInOrderMessageDelivery"`
 
 	/** For bindings only **/
 	QueueName string `mapstructure:"queueName" mdonly:"bindings"` // Only queues

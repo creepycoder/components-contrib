@@ -53,30 +53,32 @@ type HandlerFn func(ctx context.Context, msgs []*azservicebus.ReceivedMessage) (
 
 // Subscription is an object that manages a subscription to an Azure Service Bus receiver, for a topic or queue.
 type Subscription struct {
-	entity               string
-	mu                   sync.RWMutex
-	activeMessages       map[int64]*azservicebus.ReceivedMessage
-	activeOperationsChan chan struct{}
-	requireSessions      bool
-	sessionIdleTimeout   time.Duration
-	timeout              time.Duration
-	lockRenewalInterval  time.Duration
-	maxBulkSubCount      int
-	retriableErrLimiter  ratelimit.Limiter
-	handleChan           chan struct{}
-	logger               logger.Logger
+	entity                       string
+	mu                           sync.RWMutex
+	activeMessages               map[int64]*azservicebus.ReceivedMessage
+	activeOperationsChan         chan struct{}
+	requireSessions              bool
+	sessionIdleTimeout           time.Duration
+	timeout                      time.Duration
+	lockRenewalInterval          time.Duration
+	maxBulkSubCount              int
+	retriableErrLimiter          ratelimit.Limiter
+	handleChan                   chan struct{}
+	enableInOrderMessageDelivery bool
+	logger                       logger.Logger
 }
 
 type SubscriptionOptions struct {
-	MaxActiveMessages     int
-	TimeoutInSec          int
-	MaxBulkSubCount       *int
-	MaxRetriableEPS       int
-	MaxConcurrentHandlers int
-	Entity                string
-	LockRenewalInSec      int
-	RequireSessions       bool
-	SessionIdleTimeout    time.Duration
+	MaxActiveMessages            int
+	TimeoutInSec                 int
+	MaxBulkSubCount              *int
+	MaxRetriableEPS              int
+	MaxConcurrentHandlers        int
+	Entity                       string
+	LockRenewalInSec             int
+	RequireSessions              bool
+	SessionIdleTimeout           time.Duration
+	EnableInOrderMessageDelivery bool
 }
 
 // NewBulkSubscription returns a new Subscription object.
@@ -98,14 +100,15 @@ func NewSubscription(opts SubscriptionOptions, logger logger.Logger) *Subscripti
 	}
 
 	s := &Subscription{
-		entity:              opts.Entity,
-		activeMessages:      make(map[int64]*azservicebus.ReceivedMessage),
-		timeout:             time.Duration(opts.TimeoutInSec) * time.Second,
-		lockRenewalInterval: time.Duration(opts.LockRenewalInSec) * time.Second,
-		sessionIdleTimeout:  opts.SessionIdleTimeout,
-		maxBulkSubCount:     *opts.MaxBulkSubCount,
-		requireSessions:     opts.RequireSessions,
-		logger:              logger,
+		entity:                       opts.Entity,
+		activeMessages:               make(map[int64]*azservicebus.ReceivedMessage),
+		timeout:                      time.Duration(opts.TimeoutInSec) * time.Second,
+		lockRenewalInterval:          time.Duration(opts.LockRenewalInSec) * time.Second,
+		sessionIdleTimeout:           opts.SessionIdleTimeout,
+		maxBulkSubCount:              *opts.MaxBulkSubCount,
+		requireSessions:              opts.RequireSessions,
+		enableInOrderMessageDelivery: opts.EnableInOrderMessageDelivery,
+		logger:                       logger,
 		// This is a pessimistic estimate of the number of total operations that can be active at any given time.
 		// In case of a non-bulk subscription, one operation is one message.
 		activeOperationsChan: make(chan struct{}, opts.MaxActiveMessages/(*opts.MaxBulkSubCount)),
@@ -274,7 +277,11 @@ func (s *Subscription) ReceiveBlocking(parentCtx context.Context, handler Handle
 		}
 
 		// Handle the messages in background
-		go s.handleAsync(ctx, msgs, handler, receiver)
+		if s.enableInOrderMessageDelivery {
+			s.handleAsync(ctx, msgs, handler, receiver)
+		} else {
+			go s.handleAsync(ctx, msgs, handler, receiver)
+		}
 	}
 }
 
