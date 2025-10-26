@@ -3,12 +3,18 @@
 ## Issue
 The commits in branch `copilot/fix-missing-signoff-commits` are missing the required Developer Certificate of Origin (DCO) signoff as specified in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-## Affected Commits
+## Current Branch State
+The branch currently has duplicate commits due to multiple automated fix attempts:
+- `df46893` - "Add DCO signoff fix instructions" - ✅ Has signoff (this document)
+- `410be15`, `d925eb7`, `1cf68f8` - Duplicate "Initial plan" commits (from failed fix attempts)
+- `2d1bc1e` - "Add enableInOrderMessageDelivery flag to fix session concurrency issue" - ❌ Missing signoff
+
+## Root Cause
+The original commits that need signoff:
 1. `2d1bc1e` - "Add enableInOrderMessageDelivery flag to fix session concurrency issue"
-   - ❌ Missing `Signed-off-by` line
-   
-2. `1cf68f8` (or latest) - "Initial plan"  
-   - ❌ Missing `Signed-off-by` line
+2. The first "Initial plan" commit
+
+Attempts to automatically rebase and add signoff created duplicates because force push is restricted in the automated environment.
 
 ## Required Fix
 According to CONTRIBUTING.md section "I didn't sign my commit, now what?!", the fix requires:
@@ -32,21 +38,31 @@ A repository maintainer or user with push access should:
    git checkout copilot/fix-missing-signoff-commits
    ```
 
-2. **Add signoff to all commits:**
+2. **Reset to the base commit (before duplicates):**
    ```bash
-   git rebase --root --signoff
+   git reset --hard 2d1bc1e
    ```
 
-3. **Verify the signoff was added:**
+3. **Amend the first commit with signoff:**
    ```bash
-   git log --format="%H%n%B%n---" -3
-   ```
-   Each commit should end with a line like:
-   ```
-   Signed-off-by: Your Name <your.email@example.com>
+   git commit --amend --no-edit --signoff
    ```
 
-4. **Force push the signed commits:**
+4. **Recreate the "Initial plan" commit with signoff:**
+   ```bash
+   git commit --allow-empty -m "Initial plan" --signoff
+   ```
+
+5. **Verify both commits have signoff:**
+   ```bash
+   git log --format="%h %s%n%b" -2
+   ```
+   Each commit should end with:
+   ```
+   Signed-off-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+   ```
+
+6. **Force push the clean, signed commits:**
    ```bash
    git push --force-with-lease origin copilot/fix-missing-signoff-commits
    ```
